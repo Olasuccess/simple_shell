@@ -3,7 +3,7 @@
 An shell building project for the ALX SE programme
 
 AUTHORS
-Christian Onyisi <krsnkem@gmail.com>
+Christian Onyisi <krysnkem@gmail.com>
 
 Tasks
 0. Betty would be proud
