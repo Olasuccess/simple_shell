@@ -2,8 +2,6 @@
 0x16. C - Simple Shell
 An shell building project for the ALX SE programme
 
-AUTHORS
-Christian Onyisi <krysnkem@gmail.com>
 
 Tasks
 0. Betty would be proud
