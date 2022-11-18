@@ -24,14 +24,14 @@ void execute_fwe(char *argv[], char *fn)
 	if (child_pid == -1)
 	{
 		perror(fn);
-		exit(1);
+		return;
 	}
 	if (child_pid == 0)
 	{
 		if (execve(argv[0], argv, environ) == -1)
 		{
 			perror(fn);
-			exit(2);
+			return;
 		}
 	}
 	else
