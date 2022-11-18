@@ -51,7 +51,7 @@ char *read_input(void)
 	size_t bufsize = 0;
 	ssize_t characters;
 
-	write(1, "#cisfun$ ", 10);
+	/*write(1, "#cisfun$ ", 10);*/
 	characters = getline(&buffer, &bufsize, stdin);
 	if (characters != -1)
 		return (buffer);
@@ -74,7 +74,6 @@ int create_shell(char *fn)
 
 	if (userInput == NULL)
 	{
-		write(1, "\n", 2);
 		return (1);
 	}
 	operand_str = malloc(sizeof(*operand_str) * 2);
@@ -88,7 +87,7 @@ int create_shell(char *fn)
 	if (operand_str[0] == NULL)
 	{
 		free(operand_str);
-		write(1, "\n", 2);
+		write(1, "\n", 1);
 		return (1);
 	}
 
