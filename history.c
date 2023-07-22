@@ -1,41 +1,27 @@
 #include "shell.h"
-/**
- * history - Fill File By User Input
- * @input: User Input
- * Return: -1 Fail 0 Succes
- */
-int history(char *input)
-{
-	char *filename = ".simple_shell_history";
-	ssize_t fd, w;
-	int len = 0;
 
-	if (!filename)
-		return (-1);
-	fd = open(filename, O_CREAT | O_RDWR | O_APPEND, 00600);
-	if (fd < 0)
-		return (-1);
-	if (input)
-	{
-		while (input[len])
-			len++;
-		w = write(fd, input, len);
-		if (w < 0)
-			return (-1);
-	}
-	return (1);
-}
 /**
- * free_env - Free Enviroment Variable Array
- * @env:  Environment variables.
- * Return: Void
+ * history_wrapper - determines what to do for history
+ * @cmd: command for add history mode
+ * @envp: environemental variable linked list
+ * @mode: mode to determine what to do
+ * Description: 'c' create mode to create list,
+ * 'a' add history mode, and 'w' write to file mode
  */
-void free_env(char **env)
-{
-	int i;
 
-	for (i = 0; env[i]; i++)
+void history_wrapper(char *cmd, env_t *envp, char mode)
+{
+	char **arg;
+
+	arg = safe_malloc(sizeof(char *) * 2);
+	if (mode == 'c')
+		hsh_history(NULL, envp, 0);
+	else if (mode == 'a')
 	{
-		free(env[i]);
+		arg[0] = safe_malloc(sizeof(char) * (_strlen(cmd) + 1));
+		_memcpy(arg[0], cmd, _strlen(cmd) + 1);
+		hsh_history(arg, envp, 1);
 	}
+	else if (mode == 'w')
+		hsh_history(arg, envp, 2);
 }

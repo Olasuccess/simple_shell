@@ -1,90 +1,106 @@
 #include "shell.h"
-
 /**
- * main - Simple Shell (Hsh)
- * @argc: Argument Count
- * @argv:Argument Value
- * Return: Exit Value By Status
+ * main - Holberton Shell
+ * @argc: argument count
+ * @argv: a list of all arguments
+ * @envp: environmental variable list from the parent
+ * Return: 0 on success.
  */
-
-int main(__attribute__((unused)) int argc, char **argv)
+int main(int argc, char **argv, char **envp)
 {
-	char *input, **cmd;
-	int counter = 0, statue = 1, st = 0;
+	char **arg_list;
+	env_t *env_p;
+	int retrn_value;
+	buffer b = {NULL, BUFSIZE, 0};
+	(void)argc, (void)argv, (void)envp;
 
-	if (argv[1] != NULL)
-		read_file(argv[1], argv);
-	signal(SIGINT, signal_to_handel);
-	while (statue)
+	b.buf = safe_malloc(sizeof(char) * b.size);
+	arg_list = NULL;
+	retrn_value = 0;
+
+	env_p = create_envlist();
+	history_wrapper("", env_p, 'c');
+	signal(SIGINT, SIG_IGN);
+	signal(SIGINT, signal_handler);
+	while (1)
 	{
-		counter++;
-		if (isatty(STDIN_FILENO))
-			prompt();
-		input = _getline();
-		if (input[0] == '\0')
+		if (!more_cmds(&b, retrn_value))
 		{
+			print_cmdline();
+			_getline(&b, STDIN_FILENO, env_p);
+			history_wrapper(b.buf, env_p, 'a');
+		}
+		while (alias_expansion(&b, env_p))
+			;
+		variable_expansion(&b, env_p, retrn_value);
+		_getline_fileread(&b, env_p);
+		tokenize_buf(&b, &arg_list);
+		if (arg_list[0] == NULL)
 			continue;
-		}
-		history(input);
-		cmd = parse_cmd(input);
-		if (_strcmp(cmd[0], "exit") == 0)
-		{
-			exit_bul(cmd, input, argv, counter);
-		}
-		else if (check_builtin(cmd) == 0)
-		{
-			st = handle_builtin(cmd, st);
-			free_all(cmd, input);
-			continue;
-		}
-		else
-		{
-			st = check_cmd(cmd, input, counter, argv);
-
-		}
-		free_all(cmd, input);
+		retrn_value = run_builtin(arg_list, env_p, b.size);
+		if (retrn_value != 0 && retrn_value != 2)
+			retrn_value = run_execute(arg_list, env_p, b.size);
 	}
-	return (statue);
+	return (0);
 }
 /**
- * check_builtin - check builtin
+ * more_cmds - check the command line for the next command
+ * @b: buffer structure
+ * @retrn_value: Return value from last command
+ * Description: Controls the logic behind if multi-part input has more
+ *				commands to execute. Handles ; && and ||.
+ *				Will advance buffer to next command.
  *
- * @cmd:command to check
- * Return: 0 Succes -1 Fail
+ * Return: 1 if we have more commands to execute, 0 if we don't
  */
-int check_builtin(char **cmd)
+int more_cmds(buffer *b, int retrn_value)
 {
-	bul_t fun[] = {
-		{"cd", NULL},
-		{"help", NULL},
-		{"echo", NULL},
-		{"history", NULL},
-		{NULL, NULL}
-	};
-	int i = 0;
-		if (*cmd == NULL)
-	{
-		return (-1);
-	}
+	if (b->bp == 0)
+		return (0);
 
-	while ((fun + i)->command)
+	while (b->buf[b->bp] != '\0')
 	{
-		if (_strcmp(cmd[0], (fun + i)->command) == 0)
-			return (0);
-		i++;
+		if (b->buf[b->bp] == ';')
+		{
+			trim_cmd(b);
+			return (1);
+		}
+		if (b->buf[b->bp] == '&' && retrn_value == 0)
+		{
+			trim_cmd(b);
+			return (1);
+		}
+		if (b->buf[b->bp] == '|' && retrn_value != 0)
+		{
+			trim_cmd(b);
+			return (1);
+		}
+		b->bp++;
 	}
-	return (-1);
+	b->bp = 0;
+	return (0);
 }
 /**
- * creat_envi - Creat Array of Enviroment Variable
- * @envi: Array of Enviroment Variable
- * Return: Void
+ * trim_cmd - move past cmd flowcontrol point at given buffer position
+ * @b: buffer structure
+ * Description: Small helper function for function more_cmds. Advances
+ *				the buffer point past command control characters.
  */
-void creat_envi(char **envi)
+void trim_cmd(buffer *b)
 {
-	int i;
+	int flag;
 
-	for (i = 0; environ[i]; i++)
-		envi[i] = _strdup(environ[i]);
-	envi[i] = NULL;
+	flag = 0;
+	while (b->buf[b->bp] == ';')
+		b->bp++, flag = 1;
+	if (flag)
+		return;
+
+	while (b->buf[b->bp] == '|')
+		b->bp++, flag = 1;
+	if (flag)
+		return;
+
+	while (b->buf[b->bp] == '&')
+		b->bp++;
 }

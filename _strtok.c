@@ -1,64 +1,62 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <signal.h>
 #include "shell.h"
-/**
- * check_delim - Checks If A Character Match Any Char *
- * @c: Character To Check
- * @str: String To Check
- * Return: 1 Succes, 0 Failed
- */
-unsigned int check_delim(char c, const char *str)
-{
-	unsigned int i;
-
-	for (i = 0; str[i] != '\0'; i++)
-	{
-		if (c == str[i])
-			return (1);
-	}
-	return (0);
-}
 
 /**
- * _strtok - Token A String Into Token (strtrok)
- * @str: String
- * @delim: Delimiter
- * Return: Pointer To The Next Token Or NULL
+ * _strtok - tokenizes a string based on a delimiter
+ *
+ * @str: string to operate
+ * @delim: delimiter
+ *
+ * Return: pointer to string
+ * or NULL if there is no match
+ *
  */
 char *_strtok(char *str, const char *delim)
 {
-	static char *ts;
-	static char *nt;
-	unsigned int i;
+	const char *org = delim;
+	int isEqual = 1, isGetInto = 0;
+	static char *step, *stepNull;
+	static int isEnd;
 
-	if (str != NULL)
-		nt = str;
-	ts = nt;
-	if (ts == NULL)
+	if (str)
+		isEnd = 0;
+	if (isEnd)
 		return (NULL);
-	for (i = 0; ts[i] != '\0'; i++)
-	{
-		if (check_delim(ts[i], delim) == 0)
-			break;
-	}
-	if (nt[i] == '\0' || nt[i] == '#')
-	{
-		nt = NULL;
-		return (NULL);
-	}
-	ts = nt + i;
-	nt = ts;
-	for (i = 0; nt[i] != '\0'; i++)
-	{
-		if (check_delim(nt[i], delim) == 1)
-			break;
-	}
-	if (nt[i] == '\0')
-		nt = NULL;
+	step = (str) ? str : (stepNull + 1);
+	if (str)
+		stepNull = str;
 	else
+		str = step;
+	while (*str && isEqual)
 	{
-		nt[i] = '\0';
-		nt = nt + i + 1;
-		if (*nt == '\0')
-			nt = NULL;
+		isEqual = 0;
+		for (delim = org; *delim; delim++)
+			if (*str == *delim)
+				isEqual = 1;
+		str = (!isEqual) ? str : str + 1;
+		isEnd = (*str) ? 0 : 1;
+		if (isEnd)
+			return (NULL);
 	}
-	return (ts);
+	step = str;
+	while (*str && !isEqual)
+	{
+		isEqual = 0;
+		for (delim = org; *delim; delim++)
+			if (*str == *delim)
+			{
+				isGetInto = 1, isEqual = 1;
+				isEnd = (*(str + 1)) ? 0 : 1, *str = '\0';
+			}
+		str = (isEqual) ? str : str + 1;
+		if (!isGetInto && !*str)
+			isEnd = 1;
+	}
+	return (stepNull = str, step);
 }
